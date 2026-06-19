@@ -2,16 +2,21 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express()
 const uri = process.env.MONGODB_URI;
 const port = process.env.PORT || 5000;
+app.use(cors({
+  origin: "http://localhost:3000",
+  credentials: true
+}));
 
+app.use(express.json());
 
 
 
 app.get('/', (req, res) => {
-  res.send('Hello World!')
+  res.send('Hello User In RecipeHUB Server !')
 })
 
 
@@ -25,22 +30,94 @@ const client = new MongoClient(uri, {
 });
 
 
+// { Database collection created here }
+
+const database = client.db("RecipyHubproject");
+const recipesCollection = database.collection("recipes");
+const paymentCollection = database.collection("payments");
+const UserCollection = database.collection("user");
 
 
 
+
+
+
+
+app.get("/api/recipes", async (req, res) => {
+  try {
+    const { id , email  } = req.query;
+    console.log(email , id )
+    let query = {};
+
+    if (id) {
+      query = { _id: new ObjectId(id) };
+    }
+    if(email) {
+      query = { authorEmail : email}
+    }
+
+    const result = await recipesCollection.find(query).toArray();
+
+    res.json(result);
+  } catch (error) {
+    console.error("GET error:", error); 
+    res.status(500).send({ success: false, message: error.message });
+  }
+});
+ 
+
+app.patch('/api/user/:email', async (req, res) => {
+  try {
+    const email = req.params.email;
+
+    const newdata = {
+      $set: {
+        isPremium: req.body?.isPremium,
+      },
+    };
+
+    const result = await UserCollection.updateOne(
+      { email },
+      newdata
+    );
+
+    res.json(result);
+  } catch (error) {
+    console.error("PATCH error:", error);
+    res.status(500).send({ success: false, message: error.message });
+  }
+});
+
+app.post('/api/payments' , async(req , res ) => {
+  const Data = req.body 
+  const NewData = {
+    ... Data , updatedAt : new Date() 
+  }
+  const result = await paymentCollection.insertOne(NewData)
+  res.send(result)
+})
+
+
+
+app.post('/api/recipes' , async(req , res ) => {
+  const Data = req.body 
+  const NewData = {
+    ... Data , createdAt : new Date() , updatedAt : new Date()
+  }
+  const result = await recipesCollection.insertOne(NewData)
+  res.send(result)
+})
 
 async function run() {
   try {
-    
     await client.connect();
-    
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
-  } finally {
-   
-    await client.close();
+    console.log("✅ Connected to MongoDB");
+  } catch (error) {
+    console.error(error);
   }
 }
-run().catch(console.dir);
+
+run();
 
 
 app.listen(port, () => {
