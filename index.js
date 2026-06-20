@@ -43,12 +43,28 @@ const likecountCollection = database.collection("likescount");
 
 
 app.get('/api/favourite' , async ( req , res ) => {
-  const {id } = req.query ;
+  const {id , recipeid } = req.query ;
   let query = {};
   if(id){
     query = { userid : id }
   }
+  if(recipeid){
+    query = { recipeid : recipeid }
+  }
   const result = await favouriteCollection.find(query).toArray() 
+  res.send(result)
+})
+
+
+
+app.get('/api/likescount' , async ( req , res ) => {
+  const { recipeid } = req.query ;
+  let query = {};
+ 
+  if(recipeid){
+    query = { recipeid : recipeid }
+  }
+  const result = await likecountCollection.find(query).toArray() 
   res.send(result)
 })
 
@@ -118,17 +134,6 @@ app.post('/api/likescount' , async(req , res ) => {
   const result = await likecountCollection.insertOne(NewData)
   res.send(result)
 })
-
-
-app.post('/api/favouritecount' , async(req , res ) => {
-  const Data = req.body 
-  const NewData = {
-    ... Data , updatedAt : new Date() 
-  }
-  const result = await favouritecountCollection.insertOne(NewData)
-  res.send(result)
-})
-
 
 
 app.post('/api/payments' , async(req , res ) => {
