@@ -58,11 +58,15 @@ app.get('/api/favourite' , async ( req , res ) => {
 
 
 app.get('/api/likescount' , async ( req , res ) => {
-  const { recipeid } = req.query ;
+  const { recipeid , authorEmail } = req.query ;
   let query = {};
  
   if(recipeid){
     query = { recipeid : recipeid }
+  }
+
+  if(authorEmail){
+    query = { authorEmail: authorEmail}
   }
   const result = await likecountCollection.find(query).toArray() 
   res.send(result)
@@ -92,6 +96,43 @@ app.get("/api/recipes", async (req, res) => {
   }
 });
  
+
+app.patch('/api/recipes/:id', async (req, res) => {
+  try {
+    const id = new ObjectId(req.params.id)  ;
+    const Data = req.body
+    // console.log(Data)
+    const newdata = {
+      $set: {
+            recipeName: Data.recipeName,
+            recipeImage: Data.recipeImage,
+    
+            category :  Data.category ,
+            cuisineType: Data.cuisineType,
+            difficultyLevel: Data.difficultyLevel ,
+            preparationTime: Data.preparationTime ,
+            ingredients: Data.ingredients ,
+            instructions: Data.instructions ,
+             likesCount : 0 ,
+            isFeatured: Data.isFeatured ,
+            status : Data.status ,
+            updatedAt : new Date()
+      },
+    };
+
+    const result = await recipesCollection.updateOne(
+      { _id :  id },
+      newdata
+    );
+
+    res.json(result);
+  } catch (error) {
+    console.error("PATCH error:", error);
+    res.status(500).send({ success: false, message: error.message });
+  }
+});
+
+
 
 app.patch('/api/user/:email', async (req, res) => {
   try {
