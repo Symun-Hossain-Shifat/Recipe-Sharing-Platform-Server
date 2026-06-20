@@ -36,17 +36,28 @@ const database = client.db("RecipyHubproject");
 const recipesCollection = database.collection("recipes");
 const paymentCollection = database.collection("payments");
 const UserCollection = database.collection("user");
+const favouriteCollection = database.collection("favourite");
+const favouritecountCollection = database.collection("favouritecount");
+const likecountCollection = database.collection("likescount");
 
 
 
-
+app.get('/api/favourite' , async ( req , res ) => {
+  const {id } = req.query ;
+  let query = {};
+  if(id){
+    query = { userid : id }
+  }
+  const result = await favouriteCollection.find(query).toArray() 
+  res.send(result)
+})
 
 
 
 app.get("/api/recipes", async (req, res) => {
   try {
     const { id , email  } = req.query;
-    console.log(email , id )
+    // console.log(email , id )
     let query = {};
 
     if (id) {
@@ -87,6 +98,38 @@ app.patch('/api/user/:email', async (req, res) => {
     res.status(500).send({ success: false, message: error.message });
   }
 });
+
+app.post('/api/favourite' , async(req , res ) => {
+  const Data = req.body 
+  const NewData = {
+    ... Data , updatedAt : new Date() 
+  }
+  const result = await favouriteCollection.insertOne(NewData)
+  res.send(result)
+})
+
+
+
+app.post('/api/likescount' , async(req , res ) => {
+  const Data = req.body 
+  const NewData = {
+    ... Data , updatedAt : new Date() 
+  }
+  const result = await likecountCollection.insertOne(NewData)
+  res.send(result)
+})
+
+
+app.post('/api/favouritecount' , async(req , res ) => {
+  const Data = req.body 
+  const NewData = {
+    ... Data , updatedAt : new Date() 
+  }
+  const result = await favouritecountCollection.insertOne(NewData)
+  res.send(result)
+})
+
+
 
 app.post('/api/payments' , async(req , res ) => {
   const Data = req.body 
