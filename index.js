@@ -39,8 +39,9 @@ const UserCollection = database.collection("user");
 const favouriteCollection = database.collection("favourite");
 const favouritecountCollection = database.collection("favouritecount");
 const likecountCollection = database.collection("likescount");
+const reportCollection = database.collection("reports");
 
-
+// { Data Get API }
 
 app.get('/api/favourite' , async ( req , res ) => {
   const {id , recipeid } = req.query ;
@@ -96,6 +97,23 @@ app.get("/api/recipes", async (req, res) => {
   }
 });
  
+
+app.delete("/api/recipes/:id", async (req, res) => {
+try{
+ const id =  new ObjectId(req.params.id) 
+  const result = await recipesCollection.deleteOne({
+    _id : id 
+  })
+  res.send(result)
+ }
+catch(error){
+  res.status(500).send({ success: false, message: error.message });
+}})
+ 
+
+
+
+// { Data Edit API }
 
 app.patch('/api/recipes/:id', async (req, res) => {
   try {
@@ -156,6 +174,10 @@ app.patch('/api/user/:email', async (req, res) => {
   }
 });
 
+
+
+// { Data Post API }
+
 app.post('/api/favourite' , async(req , res ) => {
   const Data = req.body 
   const NewData = {
@@ -173,6 +195,16 @@ app.post('/api/likescount' , async(req , res ) => {
     ... Data , updatedAt : new Date() 
   }
   const result = await likecountCollection.insertOne(NewData)
+  res.send(result)
+})
+
+
+app.post('/api/report' , async(req , res ) => {
+  const Data = req.body 
+  const NewData = {
+    ... Data , createdAt : new Date() 
+  }
+  const result = await reportCollection.insertOne(NewData)
   res.send(result)
 })
 
