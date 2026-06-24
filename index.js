@@ -41,7 +41,12 @@ const favouritecountCollection = database.collection("favouritecount");
 const likecountCollection = database.collection("likescount");
 const reportCollection = database.collection("reports");
 
-// { Data Get API }
+// { Data Get API } 
+
+app.get( '/api/payments' , async (req , res ) => {
+  const result = await paymentCollection.find().toArray();
+  res.send(result)
+})
 
 app.get('/api/favourite' , async ( req , res ) => {
   const {id , recipeid } = req.query ;
@@ -74,6 +79,17 @@ app.get('/api/likescount' , async ( req , res ) => {
 })
 
 
+app.get('/api/report' , async (req , res ) => {
+  const result =  await reportCollection.find().toArray()
+  res.send(result)
+})
+
+
+app.get( '/api/user' , async (req , res ) =>{
+  const result = await UserCollection.find().toArray()
+  res.send(result)
+})
+
 
 app.get("/api/recipes", async (req, res) => {
   try {
@@ -97,6 +113,23 @@ app.get("/api/recipes", async (req, res) => {
   }
 });
  
+
+// { Data Delete API }
+
+app.delete("/api/report/:id", async (req, res) => {
+try{
+ const id =  new ObjectId(req.params.id) 
+  const result = await reportCollection.deleteOne({
+    _id : id 
+  })
+  res.send(result)
+ }
+catch(error){
+  res.status(500).send({ success: false, message: error.message });
+}})
+
+
+
 
 app.delete("/api/recipes/:id", async (req, res) => {
 try{
