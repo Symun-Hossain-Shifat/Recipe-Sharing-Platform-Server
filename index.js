@@ -116,6 +116,22 @@ app.get("/api/recipes", async (req, res) => {
 
 // { Data Delete API }
 
+app.delete("/api/favourite/:id", async (req, res) => {
+try{
+ const id = req.params.id 
+  const result = await favouriteCollection.deleteOne({
+    
+  recipeid : id 
+  })
+  res.send(result)
+ }
+catch(error){
+  res.status(500).send({ success: false, message: error.message });
+}})
+
+
+
+
 app.delete("/api/report/:id", async (req, res) => {
 try{
  const id =  new ObjectId(req.params.id) 
@@ -188,10 +204,12 @@ app.patch('/api/recipes/:id', async (req, res) => {
 app.patch('/api/user/:email', async (req, res) => {
   try {
     const email = req.params.email;
-
+    console.log(req.body)
     const newdata = {
       $set: {
         isPremium: req.body?.isPremium,
+        image: req.body?.image,
+        name: req.body?.name,
       },
     };
 
