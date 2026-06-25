@@ -40,6 +40,7 @@ const favouriteCollection = database.collection("favourite");
 const favouritecountCollection = database.collection("favouritecount");
 const likecountCollection = database.collection("likescount");
 const reportCollection = database.collection("reports");
+const featuredCollection = database.collection("featured");
 
 // { Data Get API } 
 
@@ -61,6 +62,11 @@ app.get('/api/favourite' , async ( req , res ) => {
   res.send(result)
 })
 
+
+app.get('/api/featured' , async (req , res ) => {
+  const result = await featuredCollection.find().toArray() 
+  res.send(result)
+})
 
 
 app.get('/api/likescount' , async ( req , res ) => {
@@ -228,6 +234,17 @@ app.patch('/api/user/:email', async (req, res) => {
 
 
 // { Data Post API }
+
+app.post('/api/featured' , async(req , res ) => {
+  const Data = req.body 
+  const NewData = {
+    ... Data , updatedAt : new Date() 
+  }
+  const result = await featuredCollection.insertOne(NewData)
+  res.send(result)
+})
+
+
 
 app.post('/api/favourite' , async(req , res ) => {
   const Data = req.body 
