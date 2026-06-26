@@ -91,17 +91,39 @@ app.get('/api/report' , async (req , res ) => {
 })
 
 
-app.get( '/api/user' , async (req , res ) =>{
-  const result = await UserCollection.find().toArray()
-  res.send(result)
-})
+
+
+app.get("/api/user", async (req, res) => {
+  try {
+    const { role } = req.query;
+    // console.log(email , id )
+    let query = {};
+    
+   
+    if(role) {
+      query = { role : role}
+    }
+
+    const result = await UserCollection.find(query).toArray();
+
+    res.json(result);
+  } catch (error) {
+    console.error("GET error:", error); 
+    res.status(500).send({ success: false, message: error.message });
+  }
+});
+
 
 
 app.get("/api/recipes", async (req, res) => {
   try {
-    const { id , email  } = req.query;
+    const { id , email , likesCount } = req.query;
     // console.log(email , id )
     let query = {};
+    
+    if (likesCount) {
+      query.likesCount = { $gte: Number(likesCount) };
+    }
 
     if (id) {
       query = { _id: new ObjectId(id) };
@@ -186,7 +208,7 @@ app.patch('/api/recipes/:id', async (req, res) => {
             preparationTime: Data.preparationTime ,
             ingredients: Data.ingredients ,
             instructions: Data.instructions ,
-             likesCount : 0 ,
+             likesCount : Data.likesCount || 0 ,
             isFeatured: Data.isFeatured ,
             status : Data.status ,
             updatedAt : new Date()
@@ -215,7 +237,8 @@ app.patch('/api/user/:email', async (req, res) => {
       $set: {
         isPremium: req.body?.isPremium,
         image: req.body?.image,
-        name: req.body?.name,
+        name: req.body?.name, 
+        isBlocked : req.body?.isBlocked
       },
     };
 
