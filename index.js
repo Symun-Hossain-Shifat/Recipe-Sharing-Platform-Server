@@ -41,6 +41,7 @@ const favouritecountCollection = database.collection("favouritecount");
 const likecountCollection = database.collection("likescount");
 const reportCollection = database.collection("reports");
 const featuredCollection = database.collection("featured");
+const recipePaymentCollection = database.collection("recipePayment");
 
 // { Data Get API } 
 
@@ -95,10 +96,12 @@ app.get('/api/report' , async (req , res ) => {
 
 app.get("/api/user", async (req, res) => {
   try {
-    const { role } = req.query;
+    const { role  , isPremium} = req.query;
     // console.log(email , id )
     let query = {};
-    
+    if(isPremium){
+      query = { isPremium : isPremium }
+    }
    
     if(role) {
       query = { role : role}
@@ -113,6 +116,27 @@ app.get("/api/user", async (req, res) => {
   }
 });
 
+
+
+app.get("/api/recipepayments", async (req, res) => {
+  try {
+    const { email } = req.query;
+  
+    let query = {};
+    
+    
+    if(email) {
+      query = { email : email}
+    }
+
+    const result = await recipePaymentCollection.find(query).toArray();
+
+    res.json(result);
+  } catch (error) {
+    console.error("GET error:", error); 
+    res.status(500).send({ success: false, message: error.message });
+  }
+});
 
 
 app.get("/api/recipes", async (req, res) => {
@@ -232,7 +256,7 @@ app.patch('/api/recipes/:id', async (req, res) => {
 app.patch('/api/user/:email', async (req, res) => {
   try {
     const email = req.params.email;
-    console.log(req.body)
+    
     const newdata = {
       $set: {
         isPremium: req.body?.isPremium,
@@ -298,6 +322,17 @@ app.post('/api/report' , async(req , res ) => {
   const result = await reportCollection.insertOne(NewData)
   res.send(result)
 })
+
+
+app.post('/api/recipepayments' , async(req , res ) => {
+  const Data = req.body 
+  const NewData = {
+    ... Data , updatedAt : new Date() 
+  }
+  const result = await recipePaymentCollection.insertOne(NewData)
+  res.send(result)
+})
+
 
 
 app.post('/api/payments' , async(req , res ) => {
