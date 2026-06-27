@@ -41,16 +41,39 @@ const favouritecountCollection = database.collection("favouritecount");
 const likecountCollection = database.collection("likescount");
 const reportCollection = database.collection("reports");
 const featuredCollection = database.collection("featured");
-const recipePaymentCollection = database.collection("recipePayment");
+const recipePaymentCollection = database.collection("recipePayment");  
+
+
+// varify User Token 
+
+const VerifyToken = (req, res, next) => {
+  console.log(req.headers);
+
+  const authHeader = req.headers.authorization;
+  if(!authHeader){
+    return res.status(401).send({
+    message: "Unauthorized access",
+  });
+  } 
+  const Token = authHeader.split(' ')[1] 
+  if(!Token){
+     return res.status(401).send({
+    message: "Unauthorized access",
+  });
+  }
+  console.log(authHeader);
+   
+  next();
+};
 
 // { Data Get API } 
 
-app.get( '/api/payments' , async (req , res ) => {
+app.get( '/api/payments' , VerifyToken , async (req , res ) => {
   const result = await paymentCollection.find().toArray();
   res.send(result)
 })
 
-app.get('/api/favourite' , async ( req , res ) => {
+app.get('/api/favourite' , VerifyToken , async ( req , res ) => {
   const {id , recipeid } = req.query ;
   let query = {};
   if(id){
@@ -86,7 +109,7 @@ app.get('/api/likescount' , async ( req , res ) => {
 })
 
 
-app.get('/api/report' , async (req , res ) => {
+app.get('/api/report' ,  VerifyToken , async (req , res ) => {
   const result =  await reportCollection.find().toArray()
   res.send(result)
 })
@@ -94,7 +117,7 @@ app.get('/api/report' , async (req , res ) => {
 
 
 
-app.get("/api/user", async (req, res) => {
+app.get("/api/user", VerifyToken , async (req, res) => {
   try {
     const { role  , isPremium} = req.query;
     // console.log(email , id )
@@ -118,7 +141,7 @@ app.get("/api/user", async (req, res) => {
 
 
 
-app.get("/api/recipepayments", async (req, res) => {
+app.get("/api/recipepayments", VerifyToken , async (req, res) => {
   try {
     const { email } = req.query;
   
@@ -216,7 +239,7 @@ catch(error){
 
 // { Data Edit API }
 
-app.patch('/api/recipes/:id', async (req, res) => {
+app.patch('/api/recipes/:id', VerifyToken , async (req, res) => {
   try {
     const id = new ObjectId(req.params.id)  ;
     const Data = req.body
@@ -253,7 +276,7 @@ app.patch('/api/recipes/:id', async (req, res) => {
 
 
 
-app.patch('/api/user/:email', async (req, res) => {
+app.patch('/api/user/:email', VerifyToken , async (req, res) => {
   try {
     const email = req.params.email;
     
@@ -282,7 +305,7 @@ app.patch('/api/user/:email', async (req, res) => {
 
 // { Data Post API }
 
-app.post('/api/featured' , async(req , res ) => {
+app.post('/api/featured' , VerifyToken , async(req , res ) => {
   const Data = req.body 
   const NewData = {
     ... Data , updatedAt : new Date() 
@@ -293,7 +316,7 @@ app.post('/api/featured' , async(req , res ) => {
 
 
 
-app.post('/api/favourite' , async(req , res ) => {
+app.post('/api/favourite' , VerifyToken , async(req , res ) => {
   const Data = req.body 
   const NewData = {
     ... Data , updatedAt : new Date() 
@@ -304,7 +327,7 @@ app.post('/api/favourite' , async(req , res ) => {
 
 
 
-app.post('/api/likescount' , async(req , res ) => {
+app.post('/api/likescount' , VerifyToken , async(req , res ) => {
   const Data = req.body 
   const NewData = {
     ... Data , updatedAt : new Date() 
@@ -314,7 +337,7 @@ app.post('/api/likescount' , async(req , res ) => {
 })
 
 
-app.post('/api/report' , async(req , res ) => {
+app.post('/api/report' , VerifyToken , async(req , res ) => {
   const Data = req.body 
   const NewData = {
     ... Data , createdAt : new Date() 
@@ -324,7 +347,7 @@ app.post('/api/report' , async(req , res ) => {
 })
 
 
-app.post('/api/recipepayments' , async(req , res ) => {
+app.post('/api/recipepayments' , VerifyToken , async(req , res ) => {
   const Data = req.body 
   const NewData = {
     ... Data , updatedAt : new Date() 
@@ -335,7 +358,7 @@ app.post('/api/recipepayments' , async(req , res ) => {
 
 
 
-app.post('/api/payments' , async(req , res ) => {
+app.post('/api/payments' , VerifyToken , async(req , res ) => {
   const Data = req.body 
   const NewData = {
     ... Data , updatedAt : new Date() 
@@ -346,7 +369,7 @@ app.post('/api/payments' , async(req , res ) => {
 
 
 
-app.post('/api/recipes' , async(req , res ) => {
+app.post('/api/recipes' , VerifyToken , async(req , res ) => {
   const Data = req.body 
   const NewData = {
     ... Data , createdAt : new Date() , updatedAt : new Date()
