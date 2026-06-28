@@ -3,6 +3,7 @@ const cors = require("cors");
 require("dotenv").config();
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const { createRemoteJWKSet, jwtVerify } = require("jose-cjs");
 const app = express()
 const uri = process.env.MONGODB_URI;
 const port = process.env.PORT || 5000;
@@ -46,7 +47,9 @@ const sessionCollection = database.collection("session");
 
 
 // varify User Token 
-
+const JWKS = createRemoteJWKSet (
+  new URL ('http://localhost:3000/api/auth/jwks')
+)
 const VerifyToken = async (req, res, next) => {
   
 
@@ -65,6 +68,14 @@ if(!authHeader){
     message: "Unauthorized access",
   });
   } 
+  try{
+    const { payload } = await jwtVerify(Token , JWKS)
+    console.log(payload)
+    
+  }catch(error){
+    return res.status(403).send({ message : 'Forbidden'})
+  }
+   
   
   const UserId = new ObjectId(id)
   const user = await UserCollection.findOne({ _id : UserId })
@@ -172,7 +183,7 @@ app.get("/api/user",  VerifyToken , VerifyAdmin , async (req, res) => {
 
 
 
-app.get("/api/recipepayments",  VerifyToken , VerifyAdmin , async (req, res) => {
+app.get("/api/recipepayments",  VerifyToken ,  async (req, res) => {
   try {
     const { email } = req.query;
   
@@ -195,9 +206,9 @@ app.get("/api/recipepayments",  VerifyToken , VerifyAdmin , async (req, res) => 
 
 app.get("/api/recipes",  async (req, res) => {
   try {
-    const { id, email, likesCount, category } = req.query;
-
-    // console.log(email , id )
+    const { id, email, likesCount , category} = req.query;
+    
+    // console.log(category )
     let query = {};
     
     if (likesCount) {
@@ -210,12 +221,13 @@ app.get("/api/recipes",  async (req, res) => {
     if(email) {
       query = { authorEmail : email}
     } 
-
-    if (category) {
+  if (category) {
       query.category = {
         $in: category.split(","),
       };
     }
+
+    
 
 
     const result = await recipesCollection.find(query).toArray();
@@ -344,7 +356,7 @@ app.patch('/api/user/:email', VerifyToken ,   async (req, res) => {
 
 // { Data Post API }
 
-app.post('/api/featured' ,  async(req , res ) => {
+app.post('/api/featured' , VerifyToken , VerifyAdmin ,  async(req , res ) => {
   const Data = req.body 
   const NewData = {
     ... Data , updatedAt : new Date() 
@@ -355,7 +367,7 @@ app.post('/api/featured' ,  async(req , res ) => {
 
 
 
-app.post('/api/favourite' ,  async(req , res ) => {
+app.post('/api/favourite' , VerifyToken , Verifyuser , async(req , res ) => {
   const Data = req.body 
   const NewData = {
     ... Data , updatedAt : new Date() 
@@ -366,7 +378,7 @@ app.post('/api/favourite' ,  async(req , res ) => {
 
 
 
-app.post('/api/likescount' , async(req , res ) => {
+app.post('/api/likescount' , VerifyToken , Verifyuser , async(req , res ) => {
   const Data = req.body 
   const NewData = {
     ... Data , updatedAt : new Date() 
@@ -376,7 +388,7 @@ app.post('/api/likescount' , async(req , res ) => {
 })
 
 
-app.post('/api/report' ,  async(req , res ) => {
+app.post('/api/report' , VerifyToken , Verifyuser ,  async(req , res ) => {
   const Data = req.body 
   const NewData = {
     ... Data , createdAt : new Date() 
@@ -386,7 +398,7 @@ app.post('/api/report' ,  async(req , res ) => {
 })
 
 
-app.post('/api/recipepayments' , async(req , res ) => {
+app.post('/api/recipepayments' , VerifyToken , Verifyuser ,  async(req , res ) => {
   const Data = req.body 
   const NewData = {
     ... Data , updatedAt : new Date() 
@@ -397,7 +409,7 @@ app.post('/api/recipepayments' , async(req , res ) => {
 
 
 
-app.post('/api/payments' ,  async(req , res ) => {
+app.post('/api/payments' , VerifyToken , Verifyuser ,  async(req , res ) => {
   const Data = req.body 
   const NewData = {
     ... Data , updatedAt : new Date() 
@@ -408,7 +420,7 @@ app.post('/api/payments' ,  async(req , res ) => {
 
 
 
-app.post('/api/recipes' ,  async(req , res ) => {
+app.post('/api/recipes' , VerifyToken , Verifyuser ,  async(req , res ) => {
   const Data = req.body 
   const NewData = {
     ... Data , createdAt : new Date() , updatedAt : new Date()
