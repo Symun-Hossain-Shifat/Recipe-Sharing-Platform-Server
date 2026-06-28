@@ -42,15 +42,19 @@ const likecountCollection = database.collection("likescount");
 const reportCollection = database.collection("reports");
 const featuredCollection = database.collection("featured");
 const recipePaymentCollection = database.collection("recipePayment");  
+const sessionCollection = database.collection("session");  
 
 
 // varify User Token 
 
-const VerifyToken = (req, res, next) => {
-  console.log(req.headers);
+const VerifyToken = async (req, res, next) => {
+  
 
-  const authHeader = req.headers.authorization;
-  if(!authHeader){
+const  authHeader = req.headers.authorization
+const  id = req.headers.user
+// console.log(req.headers)
+ 
+if(!authHeader){
     return res.status(401).send({
     message: "Unauthorized access",
   });
@@ -60,20 +64,47 @@ const VerifyToken = (req, res, next) => {
      return res.status(401).send({
     message: "Unauthorized access",
   });
-  }
-  console.log(authHeader);
-   
+  } 
+  
+  const UserId = new ObjectId(id)
+  const user = await UserCollection.findOne({ _id : UserId })
+  // console.log(user)
+    req.user = user
   next();
-};
+}; 
+
+// must call after VerifyToken function 
+
+const VerifyAdmin = async (req , res , next ) => {
+  const user = req.user  
+  if(user?.role !== 'Admin'){
+    return res.status(403).send({ message : 'forbidden access'})
+  }
+  // console.log(user) 
+  next()
+}
+
+// must call after VerifyToken function 
+
+const Verifyuser = async (req , res , next ) => {
+  const user = req.user  
+  if(user?.role !== 'User'){
+    return res.status(403).send({ message : 'forbidden access'})
+  }
+  // console.log(user) 
+  next()
+}
+
+
 
 // { Data Get API } 
 
-app.get( '/api/payments' , VerifyToken , async (req , res ) => {
+app.get( '/api/payments' ,  VerifyToken , VerifyAdmin , async (req , res ) => {
   const result = await paymentCollection.find().toArray();
   res.send(result)
 })
 
-app.get('/api/favourite' , VerifyToken , async ( req , res ) => {
+app.get('/api/favourite' ,  VerifyToken , Verifyuser ,  async ( req , res ) => {
   const {id , recipeid } = req.query ;
   let query = {};
   if(id){
@@ -93,7 +124,7 @@ app.get('/api/featured' , async (req , res ) => {
 })
 
 
-app.get('/api/likescount' , async ( req , res ) => {
+app.get('/api/likescount' ,  async ( req , res ) => {
   const { recipeid , authorEmail } = req.query ;
   let query = {};
  
@@ -109,7 +140,7 @@ app.get('/api/likescount' , async ( req , res ) => {
 })
 
 
-app.get('/api/report' ,  VerifyToken , async (req , res ) => {
+app.get('/api/report' ,  VerifyToken , VerifyAdmin ,   async (req , res ) => {
   const result =  await reportCollection.find().toArray()
   res.send(result)
 })
@@ -117,7 +148,7 @@ app.get('/api/report' ,  VerifyToken , async (req , res ) => {
 
 
 
-app.get("/api/user", VerifyToken , async (req, res) => {
+app.get("/api/user",  VerifyToken , VerifyAdmin , async (req, res) => {
   try {
     const { role  , isPremium} = req.query;
     // console.log(email , id )
@@ -141,7 +172,7 @@ app.get("/api/user", VerifyToken , async (req, res) => {
 
 
 
-app.get("/api/recipepayments", VerifyToken , async (req, res) => {
+app.get("/api/recipepayments",  VerifyToken , VerifyAdmin , async (req, res) => {
   try {
     const { email } = req.query;
   
@@ -162,9 +193,10 @@ app.get("/api/recipepayments", VerifyToken , async (req, res) => {
 });
 
 
-app.get("/api/recipes", async (req, res) => {
+app.get("/api/recipes",  async (req, res) => {
   try {
-    const { id , email , likesCount } = req.query;
+    const { id, email, likesCount, category } = req.query;
+
     // console.log(email , id )
     let query = {};
     
@@ -177,7 +209,14 @@ app.get("/api/recipes", async (req, res) => {
     }
     if(email) {
       query = { authorEmail : email}
+    } 
+
+    if (category) {
+      query.category = {
+        $in: category.split(","),
+      };
     }
+
 
     const result = await recipesCollection.find(query).toArray();
 
@@ -191,7 +230,7 @@ app.get("/api/recipes", async (req, res) => {
 
 // { Data Delete API }
 
-app.delete("/api/favourite/:id", async (req, res) => {
+app.delete("/api/favourite/:id", VerifyToken , Verifyuser ,   async (req, res) => {
 try{
  const id = req.params.id 
   const result = await favouriteCollection.deleteOne({
@@ -202,12 +241,12 @@ try{
  }
 catch(error){
   res.status(500).send({ success: false, message: error.message });
-}})
+}}) 
 
 
 
 
-app.delete("/api/report/:id", async (req, res) => {
+app.delete("/api/report/:id", VerifyToken , VerifyAdmin , async (req, res) => {
 try{
  const id =  new ObjectId(req.params.id) 
   const result = await reportCollection.deleteOne({
@@ -222,7 +261,7 @@ catch(error){
 
 
 
-app.delete("/api/recipes/:id", async (req, res) => {
+app.delete("/api/recipes/:id", VerifyToken , async (req, res) => {
 try{
  const id =  new ObjectId(req.params.id) 
   const result = await recipesCollection.deleteOne({
@@ -239,7 +278,7 @@ catch(error){
 
 // { Data Edit API }
 
-app.patch('/api/recipes/:id', VerifyToken , async (req, res) => {
+app.patch('/api/recipes/:id',  VerifyToken ,  async (req, res) => {
   try {
     const id = new ObjectId(req.params.id)  ;
     const Data = req.body
@@ -276,7 +315,7 @@ app.patch('/api/recipes/:id', VerifyToken , async (req, res) => {
 
 
 
-app.patch('/api/user/:email', VerifyToken , async (req, res) => {
+app.patch('/api/user/:email', VerifyToken ,   async (req, res) => {
   try {
     const email = req.params.email;
     
@@ -305,7 +344,7 @@ app.patch('/api/user/:email', VerifyToken , async (req, res) => {
 
 // { Data Post API }
 
-app.post('/api/featured' , VerifyToken , async(req , res ) => {
+app.post('/api/featured' ,  async(req , res ) => {
   const Data = req.body 
   const NewData = {
     ... Data , updatedAt : new Date() 
@@ -316,7 +355,7 @@ app.post('/api/featured' , VerifyToken , async(req , res ) => {
 
 
 
-app.post('/api/favourite' , VerifyToken , async(req , res ) => {
+app.post('/api/favourite' ,  async(req , res ) => {
   const Data = req.body 
   const NewData = {
     ... Data , updatedAt : new Date() 
@@ -327,7 +366,7 @@ app.post('/api/favourite' , VerifyToken , async(req , res ) => {
 
 
 
-app.post('/api/likescount' , VerifyToken , async(req , res ) => {
+app.post('/api/likescount' , async(req , res ) => {
   const Data = req.body 
   const NewData = {
     ... Data , updatedAt : new Date() 
@@ -337,7 +376,7 @@ app.post('/api/likescount' , VerifyToken , async(req , res ) => {
 })
 
 
-app.post('/api/report' , VerifyToken , async(req , res ) => {
+app.post('/api/report' ,  async(req , res ) => {
   const Data = req.body 
   const NewData = {
     ... Data , createdAt : new Date() 
@@ -347,7 +386,7 @@ app.post('/api/report' , VerifyToken , async(req , res ) => {
 })
 
 
-app.post('/api/recipepayments' , VerifyToken , async(req , res ) => {
+app.post('/api/recipepayments' , async(req , res ) => {
   const Data = req.body 
   const NewData = {
     ... Data , updatedAt : new Date() 
@@ -358,7 +397,7 @@ app.post('/api/recipepayments' , VerifyToken , async(req , res ) => {
 
 
 
-app.post('/api/payments' , VerifyToken , async(req , res ) => {
+app.post('/api/payments' ,  async(req , res ) => {
   const Data = req.body 
   const NewData = {
     ... Data , updatedAt : new Date() 
@@ -369,7 +408,7 @@ app.post('/api/payments' , VerifyToken , async(req , res ) => {
 
 
 
-app.post('/api/recipes' , VerifyToken , async(req , res ) => {
+app.post('/api/recipes' ,  async(req , res ) => {
   const Data = req.body 
   const NewData = {
     ... Data , createdAt : new Date() , updatedAt : new Date()
