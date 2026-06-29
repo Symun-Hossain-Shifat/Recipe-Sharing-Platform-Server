@@ -8,7 +8,7 @@ const app = express()
 const uri = process.env.MONGODB_URI;
 const port = process.env.PORT || 5000;
 app.use(cors({
-  origin: "http://localhost:3000",
+  origin: "https://recipehub-client-pi.vercel.app",
   credentials: true
 }));
 
@@ -45,10 +45,10 @@ const featuredCollection = database.collection("featured");
 const recipePaymentCollection = database.collection("recipePayment");  
 const sessionCollection = database.collection("session");  
 
-
+// https://recipehub-client-pi.vercel.app
 // varify User Token 
 const JWKS = createRemoteJWKSet (
-  new URL ('http://localhost:3000/api/auth/jwks')
+  new URL ('https://recipehub-client-pi.vercel.app/api/auth/jwks')
 )
 const VerifyToken = async (req, res, next) => {
   
@@ -225,6 +225,17 @@ app.get("/api/recipes",  async (req, res) => {
       query.category = {
         $in: category.split(","),
       };
+    } 
+
+    // pegination Handle  
+    if(req.query.page){ 
+      const perPage = Number(req.query.perPage) || 5;
+      const page = Number(req.query.page) || 1;
+      const skipItems = (page - 1) * perPage;
+
+      const result = recipesCollection.find(query).skip(skipItems).limit(perPage);
+      const jobs = await result.toArray()
+      return res.json(jobs);
     }
 
     
